@@ -754,6 +754,6 @@ Built with:
 
 ---
 
-**Made with ❤️ by developers who are tired of debugging RAG systems manually.**
+**Made with MUHAMMAD HASSAN SHAHBAZ by developers who are tired of debugging RAG systems manually.**
 
 *RAG-ORACLE: Because your RAG system deserves a doctor, not just a thermometer.*

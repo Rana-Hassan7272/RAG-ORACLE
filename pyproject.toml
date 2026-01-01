@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "RAG Failure Attributions Team"}
+    {name = "MUHAMMAD HASSAN SHAHBAZ"}
 ]
 keywords = ["rag", "llm", "retrieval-augmented-generation", "failure-detection", "diagnostics", "root-cause-analysis"]
 classifiers = [
@@ -51,10 +51,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/rag-oracle"
-Documentation = "https://github.com/yourusername/rag-oracle#readme"
-Repository = "https://github.com/yourusername/rag-oracle"
-Issues = "https://github.com/yourusername/rag-oracle/issues"
+Homepage = "https://github.com/muhammadhassanshahbaz/rag-oracle"
+Documentation = "https://github.com/muhammadhassanshahbaz/rag-oracle#readme"
+Repository = "https://github.com/muhammadhassanshahbaz/rag-oracle"
+Issues = "https://github.com/muhammadhassanshahbaz/rag-oracle/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
