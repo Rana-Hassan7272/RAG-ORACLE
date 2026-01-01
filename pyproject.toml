@@ -51,10 +51,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Rana-Hassan7272/RAG-ORACLE"
-Documentation = "https://github.com/Rana-Hassan7272/RAG-ORACLE#readme"
-Repository = "https://github.com/Rana-Hassan7272/RAG-ORACLE"
-Issues = "https://github.com/Rana-Hassan7272/RAG-ORACLE/issues"
+Homepage = "https://github.com/muhammadhassanshahbaz/rag-oracle"
+Documentation = "https://github.com/muhammadhassanshahbaz/rag-oracle#readme"
+Repository = "https://github.com/muhammadhassanshahbaz/rag-oracle"
+Issues = "https://github.com/muhammadhassanshahbaz/rag-oracle/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
