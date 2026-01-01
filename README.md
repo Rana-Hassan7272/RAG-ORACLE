@@ -1,5 +1,9 @@
 # 🔮 RAG-ORACLE
 
+[![PyPI](https://img.shields.io/pypi/v/rag-oracle.svg)](https://pypi.org/project/rag-oracle/)
+[![Python](https://img.shields.io/pypi/pyversions/rag-oracle.svg)](https://pypi.org/project/rag-oracle/)
+[![License](https://img.shields.io/pypi/l/rag-oracle.svg)](https://pypi.org/project/rag-oracle/)
+
 **The First Production-Grade Root Cause Analysis System for RAG Failures**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -738,9 +742,9 @@ Built with:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/rag-oracle/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/rag-oracle/discussions)
-- **Email**: support@rag-oracle.dev
+- **Issues**: [GitHub Issues](https://github.com/Rana-Hassan7272/RAG-ORACLE/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Rana-Hassan7272/RAG-ORACLE/discussions)
+- **Email**: ssc.shahbaz.2004@gmail.com
 
 ---
 
