@@ -742,9 +742,9 @@ Built with:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/Rana-Hassan7272/RAG-ORACLE/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Rana-Hassan7272/RAG-ORACLE/discussions)
-- **Email**: ssc.shahbaz.2004@gmail.com
+- **Issues**: [GitHub Issues](https://github.com/muhammadhassanshahbaz/rag-oracle/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/muhammadhassanshahbaz/rag-oracle/discussions)
+- **Email**: support@rag-oracle.dev
 
 ---
 

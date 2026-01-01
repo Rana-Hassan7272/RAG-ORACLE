@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-oracle"
-version = "0.1.0"
+version = "0.1.1"
 description = "RAG Oracle – failure diagnostics for Retrieval-Augmented Generation systems"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -51,10 +51,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/muhammadhassanshahbaz/rag-oracle"
-Documentation = "https://github.com/muhammadhassanshahbaz/rag-oracle#readme"
-Repository = "https://github.com/muhammadhassanshahbaz/rag-oracle"
-Issues = "https://github.com/muhammadhassanshahbaz/rag-oracle/issues"
+Homepage = "https://github.com/Rana-Hassan7272/RAG-ORACLE"
+Documentation = "https://github.com/Rana-Hassan7272/RAG-ORACLE#readme"
+Repository = "https://github.com/Rana-Hassan7272/RAG-ORACLE"
+Issues = "https://github.com/Rana-Hassan7272/RAG-ORACLE/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
