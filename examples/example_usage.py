@@ -6,6 +6,7 @@ Run this script to test the RAG pipeline.
 from rag_pipeline import RAGPipeline
 import json
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -15,9 +16,14 @@ load_dotenv()
 def main():
     """Example usage of RAG pipeline."""
     
+    # Get the script directory and resolve documents path relative to project root
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    documents_path = project_root / "documents"
+    
     # Initialize pipeline
     pipeline = RAGPipeline(
-        document_source="./documents",
+        document_source=str(documents_path),
         chunk_size=500,
         chunk_overlap=50,
         embedding_model="huggingface",

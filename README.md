@@ -177,35 +177,74 @@ After running 50 queries, get a comprehensive health report:
 pip install rag-oracle
 ```
 
+### Prerequisites
+
+RAG-ORACLE works with any RAG system. You'll need:
+- Python 3.8+
+- Your existing RAG pipeline (OpenAI, LangChain, LlamaIndex, or custom)
+- Optional: Embedding model for auto-evaluation (recommended for easiest setup)
+
+### Setting Up Embeddings (Recommended)
+
+For auto-evaluation, you need an embedding model. Here are common options:
+
+```python
+# Option 1: HuggingFace (Free, no API key needed)
+from langchain_huggingface import HuggingFaceEmbeddings
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+# Option 2: OpenAI (Requires API key)
+from langchain_openai import OpenAIEmbeddings
+embeddings = OpenAIEmbeddings(openai_api_key="your-key")
+
+# Option 3: Use your existing embeddings
+# Any LangChain-compatible embedding model works
+```
+
+**Note**: If you don't provide embeddings, you must provide evaluation metrics manually in each `diagnose()` call (see Advanced Usage).
+
 ### Minimal Usage (3 Lines)
 
 **For existing RAG systems - super simple integration:**
 
 ```python
-from rag_oracle import RAGOracle
+from rag_pipeline import RAGOracle
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # Initialize (one time setup)
-oracle = RAGOracle(embeddings=your_embeddings)  # or use your existing embeddings
+# Option 1: With embeddings for auto-evaluation (recommended)
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+oracle = RAGOracle(embeddings=embeddings)
 
-# Diagnose any query (add this to your existing code)
+# Option 2: Without embeddings (you provide evaluation manually)
+# oracle = RAGOracle()
+
+# In your existing RAG code, add this:
 result = oracle.diagnose(
     query="What is the capital of France?",
-    answer=your_rag_answer,
-    chunks=your_retrieved_chunks
+    answer=your_rag_answer,  # Your RAG system's generated answer
+    chunks=your_retrieved_chunks,  # List of retrieved document chunks
+    config={"top_k": 5, "temperature": 0.7}  # Optional: your system config
 )
 
 # Get instant diagnosis
-print(result["root_causes"][0]["fix"])  # "Increase top_k from 3 to 5"
+if result["root_causes"]:
+    primary = result["root_causes"][0]
+    print(f"💡 Fix: {primary['fix']}")
+    print(f"📝 {primary['user_explanation']}")
+    print(f"⚠️ Unfixable: {primary['is_unfixable']}")
 ```
 
 **That's it. No pipeline setup. No configuration. Just diagnose.**
+
+**Note**: If you don't provide embeddings, you must provide `evaluation` in each `diagnose()` call (see Advanced Usage below).
 
 ### Full Pipeline Usage
 
 If you want a complete RAG pipeline with built-in diagnostics:
 
 ```python
-from rag_oracle import RAGPipeline
+from rag_pipeline import RAGPipeline
 
 # Initialize with your documents
 pipeline = RAGPipeline(document_source="./documents")
@@ -230,12 +269,16 @@ print(f"Immediate Action: {report['immediate_action']}")
 # Failure Rate: 30.0%
 # Most Common Issue: Retrieval Configuration
 # Immediate Action: Increase top_k from 3 to 5
+
+# Analyze only last 10 queries
+recent_report = oracle.get_report(last_n=10)
 ```
 
 ### Public Output Example
 
 ```python
 # Get clean, user-facing output (for APIs/production)
+# Pass the result from diagnose() method
 public_output = oracle.get_public_output(result)
 
 print(public_output)
@@ -251,6 +294,24 @@ print(public_output)
 # }
 ```
 
+### Fix Validation Example
+
+```python
+# After applying a fix, validate if it worked
+validation = oracle.validate_fix(
+    before_query_ids=["query_1", "query_2", "query_3"],  # Before fix
+    after_query_ids=["query_4", "query_5", "query_6"]    # After fix
+)
+
+print(f"Fix Applied: {validation['fix_applied']}")
+print(f"Failure Rate Change: {validation['failure_rate_change']}")
+print(f"Verdict: {validation['verdict']}")
+# Output:
+# Fix Applied: Increase top_k from 3 to 5
+# Failure Rate Change: -20%
+# Verdict: Fix effective
+```
+
 ---
 
 ## 📚 Basic Usage
@@ -258,7 +319,7 @@ print(public_output)
 ### Complete Example
 
 ```python
-from rag_oracle import RAGPipeline
+from rag_pipeline import RAGPipeline
 import json
 
 # 1. Initialize pipeline
@@ -294,6 +355,99 @@ print(json.dumps(report, indent=2))
 
 ---
 
+## 💼 Common Use Cases
+
+### Use Case 1: Quick Diagnosis for Single Query
+
+```python
+from rag_pipeline import RAGOracle
+from langchain_huggingface import HuggingFaceEmbeddings
+
+oracle = RAGOracle(embeddings=HuggingFaceEmbeddings())
+
+# After your RAG system generates an answer
+result = oracle.diagnose(
+    query="What is the capital of France?",
+    answer=rag_answer,
+    chunks=retrieved_chunks
+)
+
+# Check if there are issues
+if result["root_causes"]:
+    print(f"Issue: {result['root_causes'][0]['type']}")
+    print(f"Fix: {result['root_causes'][0]['fix']}")
+```
+
+### Use Case 2: Batch Processing with Health Reports
+
+```python
+# Process multiple queries
+queries = ["query1", "query2", "query3"]
+results = []
+
+for query in queries:
+    answer, chunks = your_rag_system.process(query)
+    result = oracle.diagnose(query=query, answer=answer, chunks=chunks)
+    results.append(result)
+
+# Get system-wide health report
+health_report = oracle.get_report()
+print(f"Overall Failure Rate: {health_report['failure_rate']*100:.1f}%")
+print(f"Most Common Issue: {health_report['most_common_failure']['type']}")
+```
+
+### Use Case 3: Fix Validation Workflow
+
+```python
+# Step 1: Collect queries before fix
+before_queries = []
+for query in test_queries:
+    result = oracle.diagnose(...)
+    before_queries.append(result["query_id"])
+
+# Step 2: Apply recommended fix (e.g., increase top_k from 3 to 5)
+your_rag_system.update_config(top_k=5)
+
+# Step 3: Collect queries after fix
+after_queries = []
+for query in test_queries:
+    result = oracle.diagnose(...)
+    after_queries.append(result["query_id"])
+
+# Step 4: Validate if fix worked
+validation = oracle.validate_fix(
+    before_query_ids=before_queries,
+    after_query_ids=after_queries
+)
+
+if validation["verdict"] == "Fix effective":
+    print("✅ Fix validated! Keep the change.")
+else:
+    print("❌ Fix didn't help. Try a different approach.")
+```
+
+### Use Case 4: Production API Integration
+
+```python
+from flask import Flask, request, jsonify
+from rag_pipeline import RAGOracle
+
+app = Flask(__name__)
+oracle = RAGOracle(embeddings=your_embeddings)
+
+@app.route("/diagnose", methods=["POST"])
+def diagnose_endpoint():
+    data = request.json
+    result = oracle.diagnose(
+        query=data["query"],
+        answer=data["answer"],
+        chunks=data["chunks"]
+    )
+    
+    # Return clean public output
+    return jsonify(oracle.get_public_output(result))
+```
+
 ## 🔧 Integration Guide
 
 ### Option 1: Simple Integration (Recommended)
@@ -301,59 +455,109 @@ print(json.dumps(report, indent=2))
 **For 99% of users - just 3 lines of code:**
 
 ```python
-from rag_oracle import RAGOracle
+from rag_pipeline import RAGOracle
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # Initialize once (with your embeddings for auto-evaluation)
-oracle = RAGOracle(embeddings=your_embeddings)
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+oracle = RAGOracle(embeddings=embeddings)
 
 # In your existing RAG code, add this:
 result = oracle.diagnose(
     query=user_query,
     answer=your_generated_answer,
-    chunks=your_retrieved_chunks,
+    chunks=your_retrieved_chunks,  # Can be strings, dicts, or LangChain Documents
     config={"top_k": 5, "temperature": 0.7}  # optional
 )
 
 # Get actionable fix
-fix = result["root_causes"][0]["fix"]
-explanation = result["root_causes"][0]["user_explanation"]
-print(f"💡 Fix: {fix}")
-print(f"📝 {explanation}")
+if result["root_causes"]:
+    fix = result["root_causes"][0]["fix"]
+    explanation = result["root_causes"][0]["user_explanation"]
+    is_unfixable = result["root_causes"][0]["is_unfixable"]
+    print(f"💡 Fix: {fix}")
+    print(f"📝 {explanation}")
+    if is_unfixable:
+        print("⚠️ This requires data changes, not system tuning.")
 ```
 
 **Works with any RAG system** - OpenAI, LangChain, LlamaIndex, custom pipelines.
 
-### Option 2: Advanced Integration
+**Chunk Format Support**: The `chunks` parameter accepts:
+- List of strings: `["chunk 1 text", "chunk 2 text"]`
+- List of dicts: `[{"page_content": "text", "metadata": {...}}, ...]`
+- List of LangChain Documents: `[Document(page_content="..."), ...]`
 
-**For custom evaluation pipelines or advanced use cases:**
+### Option 2: Advanced Integration (Manual Evaluation)
+
+**For custom evaluation pipelines or when you already have evaluation metrics:**
 
 ```python
-from rag_oracle import RootCauseOracle
+from rag_pipeline import RAGOracle
 
-# Your existing RAG components
-retriever = YourRetriever()
-generator = YourGenerator()
-evaluator = YourEvaluator()
+# Initialize without embeddings (you'll provide evaluation manually)
+oracle = RAGOracle()
 
-# Initialize Oracle
-oracle = RootCauseOracle(query_history_file="./logs/query_history.json")
-
-# Run your RAG pipeline
+# Your existing RAG pipeline
 question = "Your query"
-chunks = retriever.retrieve(question)
-answer = generator.generate(question, chunks)
-evaluation = evaluator.evaluate(question, answer, chunks)
+chunks = your_retriever.retrieve(question)
+answer = your_generator.generate(question, chunks)
 
-# Diagnose with Oracle
-signals = {
-    "query_id": "unique_id",
-    "question": question,
-    "answer": answer,
-    "retrieved_chunks": chunks,
-    "evaluation": evaluation,
-    "config": {"top_k": 3, "temperature": 0.7}
+# Your custom evaluation (must include faithfulness, relevance, context_recall)
+evaluation = {
+    "faithfulness": {
+        "faithfulness": 0.65,  # Score 0.0-1.0
+        "unsupported_claims": ["claim 1", "claim 2"]
+    },
+    "relevance": {
+        "relevance": 0.72
+    },
+    "context_recall": {
+        "context_recall": 0.58,
+        "missing_concepts": ["concept1", "concept2"]
+    }
 }
 
+# Diagnose with pre-computed evaluation
+result = oracle.diagnose(
+    query=question,
+    answer=answer,
+    chunks=chunks,
+    evaluation=evaluation,  # Provide your evaluation
+    config={"top_k": 3, "temperature": 0.7}
+)
+
+print(result["root_causes"])
+```
+
+### Option 3: Direct RootCauseOracle Usage
+
+**For maximum control and custom signal processing:**
+
+```python
+from rag_pipeline import RootCauseOracle
+
+# Initialize Oracle
+oracle = RootCauseOracle(query_history_file="./query_history.json")
+
+# Prepare signals dictionary
+signals = {
+    "query_id": "unique_query_id",
+    "question": "Your query",
+    "answer": "Generated answer",
+    "retrieved_chunks": chunks,  # List of LangChain Documents
+    "evaluation": {
+        "faithfulness": {"faithfulness": 0.65, "unsupported_claims": []},
+        "relevance": {"relevance": 0.72},
+        "context_recall": {"context_recall": 0.58, "missing_concepts": []}
+    },
+    "config": {"top_k": 3, "temperature": 0.7},
+    "query_feasibility": None,  # Optional
+    "cost_optimization": None,  # Optional
+    "corpus_concept_check": None  # Optional
+}
+
+# Analyze
 diagnosis = oracle.analyze(signals)
 print(diagnosis["root_causes"])
 ```
@@ -396,6 +600,53 @@ RAGPipeline(
 
 ---
 
+### `RAGOracle`
+
+High-level wrapper for simplified integration (recommended for most users).
+
+#### Constructor
+```python
+RAGOracle(
+    query_history_file: Optional[str] = None,  # Defaults to "./query_history.json"
+    embeddings: Optional[Any] = None,          # Embedding model for auto-evaluation
+    generator: Optional[Any] = None            # Generator for LLM-as-a-Judge evaluation
+)
+```
+
+#### Methods
+
+**`diagnose(query: str, answer: str, chunks: list, config: dict = None, evaluation: dict = None, query_id: str = None) -> dict`**
+- Diagnose RAG query execution and identify root causes
+- `query`: User's question/query string
+- `answer`: Generated answer from your RAG system
+- `chunks`: Retrieved document chunks. Can be:
+  - List of strings: `["chunk text 1", "chunk text 2"]`
+  - List of dicts: `[{"page_content": "text", "metadata": {...}}, ...]`
+  - List of LangChain Documents: `[Document(...), ...]`
+- `config`: Optional dict with system config (e.g., `{"top_k": 5, "temperature": 0.7}`)
+- `evaluation`: Optional pre-computed evaluation dict. If not provided and embeddings available, will auto-evaluate
+- `query_id`: Optional query identifier (auto-generated if not provided)
+- Returns: Diagnosis dict with `root_causes`, `primary_failure`, `outcome`, etc.
+
+**`get_report(last_n: int = None) -> dict`**
+- Get system health report
+- `last_n`: Analyze last N queries (None = all)
+
+**`validate_fix(fix_id: str = None, before_query_ids: list = None, after_query_ids: list = None) -> dict`**
+- Validate if a fix actually worked
+- Either provide `fix_id` OR `before_query_ids`/`after_query_ids`
+- Returns: Before/after comparison with verdict
+
+**`apply_fix(fix_id: str) -> bool`**
+- Mark a recommended fix as "applied" in fix history
+- Returns: True if fix was found and marked, False otherwise
+
+**`get_public_output(result: dict) -> dict`**
+- Get clean, user-facing output
+- Returns: Simplified diagnosis for APIs/production
+
+---
+
 ### `RootCauseOracle`
 
 Core diagnostic engine for root cause analysis.
@@ -417,9 +668,14 @@ RootCauseOracle(
 - Get system health report
 - `last_n`: Analyze last N queries (None = all)
 
-**`validate_fix(fix_id: str) -> dict`**
+**`validate_fix(fix_id: str = None, before_query_ids: list = None, after_query_ids: list = None) -> dict`**
 - Validate if a fix actually worked
-- Returns: Before/after comparison
+- Either provide `fix_id` OR `before_query_ids`/`after_query_ids`
+- Returns: Before/after comparison with verdict
+
+**`apply_fix(fix_id: str) -> bool`**
+- Mark a recommended fix as "applied" in fix history
+- Returns: True if fix was found and marked, False otherwise
 
 **`get_public_output(result: dict) -> dict`**
 - Get clean, user-facing output
@@ -547,7 +803,7 @@ before_queries = ["query1", "query2", "query3"]
 after_queries = ["query4", "query5", "query6"]
 
 # Validate
-validation = oracle.validate_fix_by_queries(before_queries, after_queries)
+validation = oracle.validate_fix(before_query_ids=before_queries, after_query_ids=after_queries)
 
 print(validation)
 # {
@@ -698,23 +954,63 @@ if unused_ratio >= 0.4:
 
 ---
 
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**1. "Evaluation not provided and no embeddings available"**
+```python
+# Solution: Either provide embeddings during initialization
+oracle = RAGOracle(embeddings=your_embeddings)
+
+# OR provide evaluation in each diagnose() call
+result = oracle.diagnose(..., evaluation=your_evaluation)
+```
+
+**2. "Unsupported chunk type"**
+```python
+# Solution: Ensure chunks are in one of these formats:
+chunks = ["text1", "text2"]  # List of strings
+chunks = [{"page_content": "text", "metadata": {}}]  # List of dicts
+chunks = [Document(page_content="text")]  # List of LangChain Documents
+```
+
+**3. Import Error: "No module named 'rag_pipeline'"**
+```bash
+# Solution: Install the package
+pip install rag-oracle
+
+# Or install from source
+pip install -e .
+```
+
+**4. Low confidence scores in diagnoses**
+- This is normal for new systems with limited query history
+- Confidence improves as the system learns from more queries
+- Use `get_report()` to see system-wide patterns
+
+### Getting Help
+
+- Check the [examples/](examples/) directory for working code
+- Review the API Reference section above
+- Open an issue on [GitHub](https://github.com/Rana-Hassan7272/RAG-ORACLE/issues)
+
 ## 📦 Package Structure
 
 ```
 rag-oracle/
 ├── rag_pipeline/
 │   ├── root_cause_oracle.py    # Core diagnostic engine
-│   ├── pipeline.py              # Main RAG pipeline
-│   ├── evaluator.py             # Evaluation metrics
-│   ├── retriever.py             # Retrieval component
-│   ├── generator.py             # Generation component
-│   └── ...
+│   ├── rag_oracle.py           # Simplified wrapper (recommended)
+│   ├── pipeline.py             # Full RAG pipeline (optional)
+│   ├── evaluator.py            # Evaluation metrics
+│   ├── config.py               # Configuration defaults
+│   └── ...                     # Other components
 ├── examples/
-│   └── example_usage.py         # Usage examples
-├── tests/
-│   └── test_oracle.py           # Unit tests
+│   └── example_usage.py        # Usage examples
 ├── README.md                    # This file
-└── setup.py                     # Package setup
+├── LICENSE                      # MIT License
+└── pyproject.toml              # Package configuration
 ```
 
 ---
@@ -742,9 +1038,9 @@ Built with:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/muhammadhassanshahbaz/rag-oracle/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/muhammadhassanshahbaz/rag-oracle/discussions)
-- **Email**: support@rag-oracle.dev
+- **Issues**: [GitHub Issues](https://github.com/Rana-Hassan7272/RAG-ORACLE/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Rana-Hassan7272/RAG-ORACLE/discussions)
+- **Repository**: [RAG-ORACLE on GitHub](https://github.com/Rana-Hassan7272/RAG-ORACLE)
 
 ---
 

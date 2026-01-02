@@ -131,6 +131,35 @@ class RAGOracle:
         """
         return self.oracle.get_public_output(result)
     
+    def validate_fix(self, fix_id: Optional[str] = None, before_query_ids: Optional[List[str]] = None, after_query_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Validate the effectiveness of a deployed fix by comparing metrics before and after its application.
+        
+        Args:
+            fix_id: The deterministic ID of the fix to validate (e.g., "retrieval.top_k:+2").
+                    Required if before_query_ids and after_query_ids are not provided.
+            before_query_ids: A list of query IDs representing the period before the fix was applied.
+                              Required if fix_id is not provided.
+            after_query_ids: A list of query IDs representing the period after the fix was applied.
+                             Required if fix_id is not provided.
+        
+        Returns:
+            A dictionary containing validation results.
+        """
+        return self.oracle.validate_fix(fix_id=fix_id, before_query_ids=before_query_ids, after_query_ids=after_query_ids)
+    
+    def apply_fix(self, fix_id: str) -> bool:
+        """
+        Mark a recommended fix as "applied" in the fix history.
+        
+        Args:
+            fix_id: The deterministic ID of the fix to mark as applied.
+        
+        Returns:
+            True if the fix was found and marked as applied, False otherwise.
+        """
+        return self.oracle.apply_fix(fix_id)
+    
     def _normalize_chunks(self, chunks: Union[List[Document], List[Dict[str, Any]], List[str]]) -> List[Document]:
         """Convert chunks to LangChain Document format."""
         if not chunks:
