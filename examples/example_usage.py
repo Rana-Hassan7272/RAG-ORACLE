@@ -33,7 +33,7 @@ def main():
     )
     
     # Query the pipeline
-    question = "djkdsj shj"
+    question = "TELL BELIEFS AND THEIR IMPACT ON OUR LIVES"
     result = pipeline.query(question)
     
     # ---------------------------------------------------------

@@ -1772,13 +1772,13 @@ class RootCauseOracle:
                 avg_cost_per_query = total_cost_all / len(queries)
                 total_cost_saved = len(success_clean) * avg_cost_per_query * 0.3
         
-        avg_confidence = sum(q.get("confidence", 0.0) for q in actionable_queries) / len(actionable_queries) if actionable_queries else 0.0
+        avg_confidence = sum((q.get("confidence") or 0.0) for q in actionable_queries) / len(actionable_queries) if actionable_queries else 0.0
         
         failure_rate = len(failed_queries) / len(queries) if queries else 0.0
         
         severity_scores = []
         for q in failed_queries:
-            confidence = q.get("confidence", 0.0)
+            confidence = q.get("confidence") or 0.0
             cost = max(q.get("cost_waste", 0.0), 0.0001)
             recurrence = 1.0
             
@@ -2125,7 +2125,7 @@ class RootCauseOracle:
         primary = root_causes[0] if root_causes else None
         
         if primary:
-            confidence = primary.get("confidence", 0.0)
+            confidence = primary.get("confidence") or 0.0
             if confidence >= 0.8:
                 maturity = "high-confidence"
             elif confidence >= 0.5:
@@ -2141,7 +2141,7 @@ class RootCauseOracle:
             "primary_failure": primary.get("type") if primary else None,
             "recommended_fix": primary.get("fix") if primary else None,
             "is_unfixable": primary.get("is_unfixable", False) if primary else False,
-            "confidence": primary.get("confidence", 0.0) if primary else 0.0,
+            "confidence": (primary.get("confidence") or 0.0) if primary else 0.0,
             "explanation": primary.get("user_explanation", "") if primary else "",
             "diagnostic_maturity": maturity
         }
