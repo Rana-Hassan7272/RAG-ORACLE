@@ -1883,8 +1883,8 @@ class RootCauseOracle:
         if len(root_causes) == 1:
             final_causes = root_causes
         else:
-            conf1 = root_causes[0].get("confidence", 0.0)
-            conf2 = root_causes[1].get("confidence", 0.0) if len(root_causes) > 1 else 0.0
+            conf1 = root_causes[0].get("confidence") or 0.0
+            conf2 = (root_causes[1].get("confidence") or 0.0) if len(root_causes) > 1 else 0.0
             
             conf_gap = conf1 - conf2
             if conf_gap < 0.25:
